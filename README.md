@@ -2,7 +2,7 @@
 
 ## Introduction
 
-**This repository is an adaptation of the official Sat-MVSF framework ([GPCV/Sat-MVSF](https://github.com/GPCV/Sat-MVSF))**.  
+**This repository is an adaptation of the official Sat-MVSF framework ([GPCV/Sat-MVSF](http://gpcv.whu.edu.cn))**.  
 It is modified and optimized for practical multi-view satellite 3D reconstruction and production scenarios, with improvements in data organization, batch processing, and usability.
 
 Sat-MVSF is a general deep learning MVS framework for three-dimensional (3D) reconstruction from multi-view optical satellite images.
@@ -15,10 +15,7 @@ Sat-MVSF is a general deep learning MVS framework for three-dimensional (3D) rec
 
 ## Official Introduction
 
-This is the official implementation for our paper *A general deep learning based framework for 3D reconstruction from multi-view stereo satellite images*...
-
-## Brief introduction
-This is the official implementation for our paper *A general deep learning based framework for 3D reconstruction from multi-view stereo satellite images*. Sat-MVSF is a general deep learning MVS based framework to perform three-dimensional (3D) reconstruction of the Earth’s surface from multi-view optical satellite images. 
+This is the official implementation for our paper *A general deep learning based framework for 3D reconstruction from multi-view stereo satellite images*
 
 ## Environment
 The environment used is list here.
