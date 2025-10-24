@@ -70,6 +70,7 @@ id_of_view2 the_path_to_the_img_file_of_view2
 ...
 ```
 \* Note: For the same satellite image, the id needs to be the same in file (3) and file (4)
+
 **(5) pair.txt**
 ```
 number_of_pairs
@@ -80,6 +81,7 @@ number_of_source_view_for_the_reference1 the_source_view_id11 the_source_view_sc
 ...
 ```
 \* Note: the_source_view_score1 is a const value here and it's the interface left for future work.
+
 **(6) range.txt**
 ```
 height_min
@@ -87,7 +89,7 @@ height_max
 height_interval
 ```
 When the height_min= height_max = 0, the script will automatically determine the range from the *.rpc* file.
-#### 2. Modify the config file
+####  2. Modify the config file
 The config options are store in a *.json* file:
 ```
 {
@@ -139,3 +141,4 @@ Thanks to the authors for opening up their outstanding work:
 VisSat Satellite Stereo @https://github.com/Kai-46/VisSatToolSet
 Cascade MVS-Net: https://github.com/alibaba/cascade-stereo
 UCSNet: https://github.com/touristCheng/UCSNet
+SP-NVS: https://github.com/Tian8du/SP-MVS
