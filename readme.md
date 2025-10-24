@@ -9,30 +9,25 @@ Sat-MVSF is a general deep learning MVS framework for three-dimensional (3D) rec
 
 ## Differences from Official Sat-MVSF
 
-- Data pipeline is optimized for large-scale satellite datasets and actual production environments.
-- Scripts and configuration support flexible multi-view group organization and real project workflows.
-- Compatible with the original Sat-MVSF code and evaluation, but easier to use in automated or industrial processes.
-
-## Official Introduction
-
-This is the official implementation for  paper *A general deep learning based framework for 3D reconstruction from multi-view stereo satellite images*
+- Data pipeline is optimized for large-scale satellite datasets and real production environments.  
+- Scripts and configurations support flexible multi-view grouping and practical project workflows.  
+- A CPU version of the MVS pipeline is implemented, where the depth-map projection to point clouds is processed in blocks, significantly improving efficiency on large datasets.  
+- Fully compatible with the original Sat-MVSF code and evaluation, while easier to integrate into automated or industrial workflows.
 
 ## Environment
-The environment used is list here.
-| Package               | Version     |
-| --------------------- | ----------- |
-| imageio               | 2.9.0       | 
-| gdal                  | 3.3.1       |
-| pytorch               | 1.4.0       |
-| numpy                 | 1.19.2      |
-| numpy-groupies        | 0.9.13      |
-| pillow                | 8.1.0       |
-| opencv-python-headless| 4.5.5.64    |
-| pylas                 | 0.4.3       |
+
+The environment used for this project is listed below.  
+It is recommended to create it via **conda** using the provided `environment.yml` file.
+
+```bash
+conda env create -f environment.yml
+conda activate MVS_env
+```
 
 ## How to run
 #### 1. Create info files for your data
 The info files includes: 
+```
 | File                  | Contents                               |
 | --------------------- | -----------                            |
 | projection.prj        | the projection infomation              |
@@ -41,6 +36,7 @@ The info files includes:
 | images_info.txt       | the pathes of image files              |
 | pair.txt              | the pair infomation                    |
 | range.txt             | the searh range                        |
+```
 
 **(1) projection.prj**
 The *.prj* files can be easily exported from GIS software such as Arcgis.
@@ -111,8 +107,7 @@ The config options are store in a *.json* file:
   "geometric_num": 2                # the geometric consistency check threshold
 }
 ```
-#### 3. Run the script for WHU-TLC dataset
-The info files are already created and an example for running the script on WHU-TLC test dataset:
+#### 3. Run the script
 ```
 python run_whu_tlc.py
 ```
@@ -123,17 +118,8 @@ pipeline = Pipeline(image_paths, camera_paths, config, prj_str,
 pipeline.run()
 ```
 
-## Evaluate performance in WHU-TLC test dataset
-Run the script *evaluate_tlc.py* by cmd:
-```
-python evaluate_tlc.py
-```
-\* Note: unzip the *test_mask.zip* in the same directory of *test* in the WHU-TLC dataset. 
-## License
-GPLv3. 
-
 ## Citation
-If you find this code helpful, please cite our work:
+If you find this code helpful, please cite their work:
 ```
 @article{GAO2023446,
 title = {A general deep learning based framework for 3D reconstruction from multi-view stereo satellite images},
