@@ -1,0 +1,16 @@
+{
+  "run_crop_img":true,
+  "run_mvs": true,
+  "run_generate_points":true,
+  "run_generate_dsm":true,
+  "block_size_x": 768,
+  "block_size_y": 768,
+  "overlap_x": 0.0,
+  "overlap_y": 0.0,
+  "para": 64,
+  "invalid_value": -999,
+  "position_threshold": 2,
+  "depth_threshold": 500,
+  "relative_depth_threshold": 100,
+  "geometric_num": 2
+}

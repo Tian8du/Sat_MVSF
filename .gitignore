@@ -1,0 +1,8 @@
+checkpoints/
+infos/
+temp/
+Generate_orders/
+
+batch_orders.py
+run_sat.bat
+
