@@ -1,0 +1,58 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sat-mvsf"
+version = "0.1.0"
+description = "Satellite Multi-View Stereo reconstruction with CPU-blocked projection, PyTorch support, and GDAL/CuPy integration"
+readme = "README.md"
+requires-python = ">=3.9,<3.12"
+license = { file = "LICENSE" }
+authors = [{ name = "Chen Liu" }]
+keywords = ["satellite", "MVS", "3D reconstruction", "remote sensing", "PyTorch", "GDAL"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+# ---- Core dependencies (lightweight, safe to install everywhere) ----
+dependencies = [
+  "python-dateutil>=2.8",
+  "numpy>=1.26,<2",
+  "opencv-python>=4.8",
+  "imageio>=2.31",
+  "matplotlib>=3.7",
+  "tqdm>=4.66",
+  "pylas>=0.4",
+]
+
+# ---- Optional dependencies (for full functionality, skipped on Windows) ----
+[project.optional-dependencies]
+full = [
+  "torch>=2.2,<3",
+  "torchvision>=0.17,<0.20",
+  "torchaudio>=2.2,<3",
+  "GDAL>=3.4; platform_system != 'Windows'",
+  "cupy-cuda11x>=13.0,<14.0; platform_system != 'Windows'",
+]
+
+# ---- Developer / build dependencies ----
+dev = ["build", "twine", "wheel"]
+
+# ---- CLI entry point ----
+[project.scripts]
+satmvsf = "satmvs.satmvs_cli:main"
+
+# ---- setuptools configuration ----
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["satmvs*"]
+
+[tool.setuptools.package-data]
+# Include configuration, assets, and non-Python resources
+satmvs = ["**/*.json", "**/*.yaml", "**/*.yml", "config/**", "assets/**"]

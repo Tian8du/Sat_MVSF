@@ -1,8 +1,8 @@
-checkpoints/
-infos/
+satmvs/checkpoints/
+satmvs/infos/
 temp/
 Generate_orders/
 
-batch_orders.py
+Generate_orders/batch_orders.py
 run_sat.bat
 
