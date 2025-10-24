@@ -41,6 +41,7 @@ The info files includes:
 | images_info.txt       | the pathes of image files              |
 | pair.txt              | the pair infomation                    |
 | range.txt             | the searh range                        |
+
 **(1) projection.prj**
 The *.prj* files can be easily exported from GIS software such as Arcgis.
 ```
