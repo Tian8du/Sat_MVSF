@@ -1,32 +1,32 @@
 import os, sys, glob, ctypes
 
-PREFIX = sys.prefix
-LIBBIN = os.path.join(PREFIX, "Library", "bin")
-
-# 1) Inject DLL search path (Py3.7 uses PATH; Py3.8+ uses add_dll_directory)
-if hasattr(os, "add_dll_directory"):
-    os.add_dll_directory(LIBBIN)
-else:
-    os.environ["PATH"] = LIBBIN + os.pathsep + os.environ.get("PATH", "")
-
-# 2) Core environment variables
-os.environ.setdefault("GDAL_DATA", os.path.join(PREFIX, "Library", "share", "gdal"))
-os.environ.setdefault("PROJ_LIB",  os.path.join(PREFIX, "Library", "share", "proj"))
-
-# 3) Preload key GDAL/GEOS/PROJ dependencies silently
-def _load(pattern: str):
-    matches = glob.glob(os.path.join(LIBBIN, pattern))
-    if not matches:
-        raise OSError(f"Missing DLL file matching '{pattern}' under '{LIBBIN}'")
-    try:
-        ctypes.CDLL(matches[0])
-    except OSError as e:
-        raise OSError(f"Failed to load '{matches[0]}' -> {e}") from e
-
-for pat in ("gdal*.dll", "geos_c*.dll", "proj*.dll", "hdf5*.dll", "libcurl*.dll", "zlib*.dll", "iconv*.dll"):
-    _load(pat)
-
-# Done: environment prepared with no stdout output.
+# PREFIX = sys.prefix
+# LIBBIN = os.path.join(PREFIX, "Library", "bin")
+#
+# # 1) Inject DLL search path (Py3.7 uses PATH; Py3.8+ uses add_dll_directory)
+# if hasattr(os, "add_dll_directory"):
+#     os.add_dll_directory(LIBBIN)
+# else:
+#     os.environ["PATH"] = LIBBIN + os.pathsep + os.environ.get("PATH", "")
+#
+# # 2) Core environment variables
+# os.environ.setdefault("GDAL_DATA", os.path.join(PREFIX, "Library", "share", "gdal"))
+# os.environ.setdefault("PROJ_LIB",  os.path.join(PREFIX, "Library", "share", "proj"))
+#
+# # 3) Preload key GDAL/GEOS/PROJ dependencies silently
+# def _load(pattern: str):
+#     matches = glob.glob(os.path.join(LIBBIN, pattern))
+#     if not matches:
+#         raise OSError(f"Missing DLL file matching '{pattern}' under '{LIBBIN}'")
+#     try:
+#         ctypes.CDLL(matches[0])
+#     except OSError as e:
+#         raise OSError(f"Failed to load '{matches[0]}' -> {e}") from e
+#
+# for pat in ("gdal*.dll", "geos_c*.dll", "proj*.dll", "hdf5*.dll", "libcurl*.dll", "zlib*.dll", "iconv*.dll"):
+#     _load(pat)
+#
+# # Done: environment prepared with no stdout output.
 
 
 import os
@@ -51,11 +51,10 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 parser = argparse.ArgumentParser(description='Sat-MVSF')
 parser.add_argument("--config_file", default="config/config.json")
 # infomation for input data
-parser.add_argument("--info_root", default="infos/ZY3")
+parser.add_argument("--info_root", default="E:\Codes2\sat-mvsf\demo\orders")
 
 # model
-parser.add_argument('--device', default="gpu",
-                    help='gpu or cpu')
+parser.add_argument('--device', default="gpu", help='gpu or cpu')
 
 # model
 parser.add_argument('--loadckpt', default="checkpoints/casred.ckpt",

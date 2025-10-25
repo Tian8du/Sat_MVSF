@@ -1,23 +1,19 @@
-[build-system]
-requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "sat-mvsf"
-version = "0.1.0"
+version = "0.1.2"
 description = "Satellite Multi-View Stereo reconstruction with CPU-blocked projection, PyTorch support, and GDAL/CuPy integration"
 readme = "README.md"
-requires-python = ">=3.9,<3.12"
-license = { file = "LICENSE" }
-authors = [{ name = "Chen Liu" }]
+requires-python = ">=3.9,<3.13"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Chen Liu (Wuhan University)" }]
 keywords = ["satellite", "MVS", "3D reconstruction", "remote sensing", "PyTorch", "GDAL"]
 classifiers = [
   "Programming Language :: Python :: 3",
-  "License :: OSI Approved :: MIT License",
-  "Operating System :: OS Independent",
+  "Operating System :: OS Independent"
 ]
 
-# ---- Core dependencies (lightweight, safe to install everywhere) ----
+# ---- Core + Platform-Specific Dependencies ----
 dependencies = [
   "python-dateutil>=2.8",
   "numpy>=1.26,<2",
@@ -25,27 +21,23 @@ dependencies = [
   "imageio>=2.31",
   "matplotlib>=3.7",
   "tqdm>=4.66",
-  "pylas>=0.4",
+  "laspy>=2.5",
+
+  # ✅ 自动安装完整依赖（仅在 Linux）
+  "torch>=2.2,<3; platform_system == 'Linux'",
+  "torchvision>=0.17,<0.20; platform_system == 'Linux'",
+  "torchaudio>=2.2,<3; platform_system == 'Linux'",
+  "GDAL>=3.4; platform_system == 'Linux'",
+  "cupy-cuda11x>=13.0,<14.0; platform_system == 'Linux'",
 ]
 
-# ---- Optional dependencies (for full functionality, skipped on Windows) ----
 [project.optional-dependencies]
-full = [
-  "torch>=2.2,<3",
-  "torchvision>=0.17,<0.20",
-  "torchaudio>=2.2,<3",
-  "GDAL>=3.4; platform_system != 'Windows'",
-  "cupy-cuda11x>=13.0,<14.0; platform_system != 'Windows'",
-]
-
-# ---- Developer / build dependencies ----
+# 开发环境专用
 dev = ["build", "twine", "wheel"]
 
-# ---- CLI entry point ----
 [project.scripts]
 satmvsf = "satmvs.satmvs_cli:main"
 
-# ---- setuptools configuration ----
 [tool.setuptools]
 include-package-data = true
 
@@ -54,5 +46,11 @@ where = ["."]
 include = ["satmvs*"]
 
 [tool.setuptools.package-data]
-# Include configuration, assets, and non-Python resources
-satmvs = ["**/*.json", "**/*.yaml", "**/*.yml", "config/**", "assets/**"]
+satmvs = [
+  "**/*.json",
+  "**/*.yaml",
+  "**/*.yml",
+  "config/**",
+  "assets/**",
+  "checkpoints/*.ckpt"
+]

@@ -1,0 +1,4 @@
+3
+0 ../images/0000.tif
+1 ../images/0001.tif
+2 ../images/0002.tif

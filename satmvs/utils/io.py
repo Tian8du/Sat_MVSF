@@ -122,16 +122,55 @@ def read_info_from_txt(txt_file):
         items = info.split(" ", 1)
         read_info[int(items[0])] = items[1]
     
-    # print(read_info)
-    # use the following to change the root directory
-    # write_txt = "{}\n".format(num)
-    # for key, value in read_info.items():
-    #     write_txt += "{} {}\n".format(key, value.replace("F:/gaojian/ZY3_open/open_dataset_zy3/", "D:/data/WHU_TLC/WHU-TLC/Open/"))
-        
-    # with open(txt_file, "w") as f:
-    #     f.write(write_txt)
-    
     return read_info
+
+import os
+
+def read_info_from_txt2(txt_file: str, make_absolute: bool = True, forward_slash: bool = True) -> dict[int, str]:
+    """
+    Read an info.txt file of format:
+        N
+        <id> <path>
+        <id> <path>
+    If paths are relative, convert them relative to txt_file's directory.
+
+    Args:
+        txt_file: Path to the .txt file
+        make_absolute: If True, convert relative paths to absolute
+        forward_slash: If True, replace backslashes with forward slashes
+
+    Returns:
+        Dictionary {id: resolved_path}
+    """
+    with open(txt_file, "r", encoding="utf-8") as f:
+        lines = f.read().splitlines()
+
+    if not lines:
+        raise ValueError(f"Empty info file: {txt_file}")
+
+    num = int(lines[0])
+    info_list = lines[1:]
+    assert num == len(info_list), (
+        f"Error reading info file {txt_file}. It shows {num} records, but got {len(info_list)} instead."
+    )
+
+    base_dir = os.path.dirname(os.path.abspath(txt_file))
+    result: dict[int, str] = {}
+
+    for line in info_list:
+        # Only split on first space; path can contain spaces
+        idx_str, path_str = line.split(" ", 1)
+        path_str = path_str.strip()
+
+        if make_absolute and not os.path.isabs(path_str):
+            path_str = os.path.normpath(os.path.join(base_dir, path_str))
+
+        if forward_slash:
+            path_str = path_str.replace("\\", "/")
+
+        result[int(idx_str)] = path_str
+
+    return result
 
 
 def read_pair_from_txt(txt_file):

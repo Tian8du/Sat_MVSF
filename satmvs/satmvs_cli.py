@@ -25,6 +25,7 @@ import argparse
 import traceback
 import platform
 from pathlib import Path
+from random import choices
 from typing import Optional, List, Tuple, Dict, Any
 
 # ----------------- Optional heavy deps (PyTorch) -----------------
@@ -46,16 +47,13 @@ def _bootstrap_gdal() -> None:
     prefix = sys.prefix
     libbin = os.path.join(prefix, "Library", "bin")
     if not os.path.isdir(libbin):
-        # Not a conda-style layout; skip
         return
 
-    # Add DLL search path (Python 3.8+)
     if hasattr(os, "add_dll_directory"):
         os.add_dll_directory(libbin)  # type: ignore[attr-defined]
     else:
         os.environ["PATH"] = libbin + os.pathsep + os.environ.get("PATH", "")
 
-    # Provide default GDAL/PROJ data directories if not set
     os.environ.setdefault("GDAL_DATA", os.path.join(prefix, "Library", "share", "gdal"))
     os.environ.setdefault("PROJ_LIB", os.path.join(prefix, "Library", "share", "proj"))
 
@@ -64,7 +62,6 @@ def _bootstrap_gdal() -> None:
         if matches:
             ctypes.CDLL(matches[0])
 
-    # Attempt to pre-load common dependency DLLs (best-effort)
     for pat in ("gdal*.dll", "geos_c*.dll", "proj*.dll", "hdf5*.dll", "libcurl*.dll", "zlib*.dll", "iconv*.dll"):
         try:
             _load(pat)
@@ -77,7 +74,6 @@ def _bootstrap_gdal() -> None:
 def resource_path(rel_path: str) -> str:
     """
     Resolve paths for both source runs and PyInstaller bundles.
-    If `rel_path` is absolute, return it as-is; otherwise resolve relative to this file (or _MEIPASS).
     """
     base = Path(getattr(sys, "_MEIPASS", Path(__file__).parent))
     p = Path(rel_path)
@@ -89,7 +85,7 @@ from satmvs.utils.files import get_all_files, ensure_forward_slash, mkdir_if_not
 from satmvs.pipeline.rpc_pipeline import Pipeline
 from satmvs.utils.io import (
     read_info_from_txt, read_pair_from_txt, read_border_from_txt,
-    read_range_from_txt, read_config
+    read_range_from_txt, read_config, read_info_from_txt2
 )
 from satmvs.pylog.logger import Logger
 
@@ -100,11 +96,9 @@ def _build_pairs(
     camera_info_file: str,
     pair_info_file: str
 ) -> Tuple[List[List[str]], List[List[str]], List[List[int]]]:
-    """
-    Build (image_pairs, camera_pairs, id_pairs) from info files.
-    """
-    image_paths = read_info_from_txt(image_info_file)
-    camera_paths = read_info_from_txt(camera_info_file)
+    """Build (image_pairs, camera_pairs, id_pairs) from info files."""
+    image_paths = read_info_from_txt2(image_info_file)
+    camera_paths = read_info_from_txt2(camera_info_file)
     pair_info = read_pair_from_txt(pair_info_file)
 
     image_pairs = [[image_paths[int(i)] for i in pair_info[p]] for p in range(len(pair_info))]
@@ -113,7 +107,7 @@ def _build_pairs(
     return image_pairs, camera_pairs, id_pairs
 
 
-# ----------------- Core runner (pure function) -----------------
+# ----------------- Core runner -----------------
 def run_satmvsf(
     *,
     config_file: str,
@@ -121,6 +115,7 @@ def run_satmvsf(
     workspace: str,
     loadckpt: str = "checkpoints/casred.ckpt",
     device: Optional[str] = None,
+    model: str = "casred",
     resize_scale: float = 1.0,
     sample_scale: float = 1.0,
     interval_scale: float = 2.5,
@@ -131,154 +126,122 @@ def run_satmvsf(
     depth_inter_r: str = "4,2,1",
     cr_base_chs: str = "8,8,8",
 ) -> Dict[str, Any]:
-    """
-    Programmatic entry point.
-    - Does not read global argparse state.
-    - Raises exceptions on failure; returns a dict on success.
-    - Suitable for Python or C++ subprocess orchestration.
-
-    Returns:
-        {
-          "ok": True,
-          "workspace": "<abs path>",
-          "records": [
-              {"scene": str, "pair": str, "output": str, "log": str, "elapsed_sec": float},
-              ...
-          ]
-        }
-    """
+    """Programmatic entry point."""
     _bootstrap_gdal()
 
-    # Resolve resource-dependent files (support PyInstaller)
     config_file = resource_path(config_file)
     loadckpt = resource_path(loadckpt)
 
-    # Normalize/prepare directories
     info_root = ensure_forward_slash(info_root)
     workspace = ensure_forward_slash(workspace)
     mkdir_if_not_exist(workspace)
 
-    # Validate existence
     if not os.path.isfile(config_file):
         raise FileNotFoundError(f"Config file not found: {config_file}")
     if not os.path.isdir(info_root):
         raise FileNotFoundError(f"Info root directory not found: {info_root}")
 
-    # Optional device handling
     if device:
-        # If CUDA requested while torch or CUDA is unavailable, fail early
         if device.startswith("cuda"):
             if (torch is None) or (not torch.cuda.is_available()):
                 raise RuntimeError("CUDA requested but PyTorch CUDA is not available.")
-            # Expose CUDA device index to internal modules if needed
             os.environ["CUDA_VISIBLE_DEVICES"] = device.split(":")[-1] if ":" in device else device
 
-    # Load config
     config = read_config(config_file)
 
-    # Enumerate scenes (directories only)
-    scene_names = [d for d in os.listdir(info_root) if os.path.isdir(os.path.join(info_root, d))]
-    if not scene_names:
-        raise FileNotFoundError(f"No scene directories found under: {info_root}")
 
     run_records: List[Dict[str, Any]] = []
 
-    for scene in scene_names:
-        scene_root = f"{info_root}/{scene}"
+    scene_root = f"{info_root}"
 
-        # Project metadata (.prj); enforce existence
-        prjs = get_all_files(scene_root, ".prj")
-        if not prjs:
-            raise FileNotFoundError(f"No .prj found in scene: {scene_root}")
-        prj_file = prjs[0]
-        with open(prj_file, "r", encoding="utf-8", errors="ignore") as f:
-            prj_str = f.read()
+    prjs = get_all_files(scene_root, ".prj")
+    if not prjs:
+        raise FileNotFoundError(f"No .prj found in scene: {scene_root}")
+    prj_file = prjs[0]
+    with open(prj_file, "r", encoding="utf-8", errors="ignore") as f:
+        prj_str = f.read()
 
-        # Required info files
-        images_info_file = f"{scene_root}/images_info.txt"
-        cameras_info_file = f"{scene_root}/cameras_info.txt"
-        pairs_info_file = f"{scene_root}/pair.txt"
-        border_info_file = f"{scene_root}/border.txt"
-        range_file = f"{scene_root}/range.txt"
+    images_info_file = f"{scene_root}/images_info.txt"
+    cameras_info_file = f"{scene_root}/cameras_info.txt"
+    pairs_info_file = f"{scene_root}/pair.txt"
+    border_info_file = f"{scene_root}/border.txt"
+    range_file = f"{scene_root}/range.txt"
 
-        for fpath in (images_info_file, cameras_info_file, pairs_info_file, border_info_file, range_file):
-            if not os.path.isfile(fpath):
-                raise FileNotFoundError(f"Missing required info file: {fpath}")
+    for fpath in (images_info_file, cameras_info_file, pairs_info_file, border_info_file, range_file):
+        if not os.path.isfile(fpath):
+            raise FileNotFoundError(f"Missing required info file: {fpath}")
 
-        image_pair_list, camera_pair_list, id_pair_list = _build_pairs(
-            images_info_file, cameras_info_file, pairs_info_file
+    image_pair_list, camera_pair_list, id_pair_list = _build_pairs(
+        images_info_file, cameras_info_file, pairs_info_file
+    )
+    border_info = read_border_from_txt(border_info_file)
+    depth_range = read_range_from_txt(range_file)
+
+    pair_workspace = f"{workspace}"
+    mkdir_if_not_exist(pair_workspace)
+
+    for image_paths, camera_paths, idxs in zip(image_pair_list, camera_pair_list, id_pair_list):
+        out_name = "_".join(map(str, idxs))
+        output = f"{pair_workspace}/{out_name}"
+        mkdir_if_not_exist(output)
+
+        log_file = ensure_forward_slash(os.path.join(output, "workspace_log.txt"))
+        logger = Logger(log_file)
+
+        logger.info(f"config: {config}")
+        for p_img, p_cam in zip(image_paths, camera_paths):
+            logger.info(f"  {p_img}  {p_cam}")
+        logger.info(f"output: {output}")
+        logger.info(
+            f"border: start ({border_info[0]}, {border_info[1]}) "
+            f"xsize {border_info[2]} ysize {border_info[3]} "
+            f"xuint {border_info[4]} yuint {border_info[5]}"
         )
-        border_info = read_border_from_txt(border_info_file)
-        depth_range = read_range_from_txt(range_file)
+        logger.info(
+            f"search range: [{depth_range[0]}]-[{depth_range[1]}] interval:{depth_range[2]}"
+        )
 
-        pair_workspace = f"{workspace}/{scene}"
-        mkdir_if_not_exist(pair_workspace)
+        class _Args:
+            pass
 
-        # Iterate over image/camera pairs
-        for image_paths, camera_paths, idxs in zip(image_pair_list, camera_pair_list, id_pair_list):
-            out_name = "_".join(map(str, idxs))
-            output = f"{pair_workspace}/{out_name}"
-            mkdir_if_not_exist(output)
+        _a = _Args()
+        _a.resize_scale = resize_scale
+        _a.sample_scale = sample_scale
+        _a.interval_scale = interval_scale
+        _a.batch_size = batch_size
+        _a.adaptive_scaling = adaptive_scaling
+        _a.share_cr = share_cr
+        _a.ndepths = ndepths
+        _a.depth_inter_r = depth_inter_r
+        _a.cr_base_chs = cr_base_chs
+        _a.loadckpt = loadckpt
+        _a.config_file = config_file
+        _a.info_root = info_root
+        _a.workspace = workspace
+        _a.device = device  # ✅ FIXED
+        _a.model = model
+        _a.out_dsm_path = ""
 
-            # Logger for each pair
-            log_file = ensure_forward_slash(os.path.join(output, "workspace_log.txt"))
-            logger = Logger(log_file)
+        t_pair = time.time()
+        pipeline = Pipeline(
+            image_paths, camera_paths, config, prj_str,
+            border_info, depth_range, output, logger, _a
+        )
+        pipeline.run()
+        elapsed = round(time.time() - t_pair, 3)
 
-            # Log key context for reproducibility
-            logger.info(f"config: {config}")
-            for p_img, p_cam in zip(image_paths, camera_paths):
-                logger.info(f"  {p_img}  {p_cam}")
-            logger.info(f"output: {output}")
-            logger.info(
-                f"border: start ({border_info[0]}, {border_info[1]}) "
-                f"xsize {border_info[2]} ysize {border_info[3]} "
-                f"xuint {border_info[4]} yuint {border_info[5]}"
-            )
-            logger.info(
-                f"search range: [{depth_range[0]}]-[{depth_range[1]}] interval:{depth_range[2]}"
-            )
+        run_records.append({
+            "scene": scene,
+            "pair": out_name,
+            "output": ensure_forward_slash(output),
+            "log": log_file,
+            "elapsed_sec": elapsed
+        })
 
-            # Emulate argparse namespace for Pipeline if needed
-            class _Args:
-                pass
-
-            _a = _Args()
-            _a.resize_scale = resize_scale
-            _a.sample_scale = sample_scale
-            _a.interval_scale = interval_scale
-            _a.batch_size = batch_size
-            _a.adaptive_scaling = adaptive_scaling
-            _a.share_cr = share_cr
-            _a.ndepths = ndepths
-            _a.depth_inter_r = depth_inter_r
-            _a.cr_base_chs = cr_base_chs
-            _a.loadckpt = loadckpt
-            _a.config_file = config_file
-            _a.info_root = info_root
-            _a.workspace = workspace
-
-            # Run pipeline with timing
-            t_pair = time.time()
-            pipeline = Pipeline(
-                image_paths, camera_paths, config, prj_str,
-                border_info, depth_range, output, logger, _a
-            )
-            pipeline.run()
-            elapsed = round(time.time() - t_pair, 3)
-
-            run_records.append({
-                "scene": scene,
-                "pair": out_name,
-                "output": ensure_forward_slash(output),
-                "log": log_file,
-                "elapsed_sec": elapsed
-            })
-
-            # Cleanup
-            del pipeline
-            gc.collect()
-            if torch is not None and hasattr(torch, "cuda") and torch.cuda.is_available():
-                torch.cuda.empty_cache()
+        del pipeline
+        gc.collect()
+        if torch is not None and hasattr(torch, "cuda") and torch.cuda.is_available():
+            torch.cuda.empty_cache()
 
     return {"ok": True, "workspace": ensure_forward_slash(workspace), "records": run_records}
 
@@ -286,20 +249,18 @@ def run_satmvsf(
 # ----------------- CLI entry -----------------
 def main() -> None:
     p = argparse.ArgumentParser("Sat-MVSF")
-    # Required (with defaults)
     p.add_argument("--config", default="config/config.json", help="Path to configuration file")
-    p.add_argument("--info_root", default="infos/ZY3-WHU", help="Root folder containing scene infos")
-    p.add_argument("--workspace", default="temp_workspace_WHUZY3", help="Output workspace directory")
+    p.add_argument("--info_root", default=r"E:\Codes2\sat-mvsf\demo\orders", help="Root folder containing scene infos")
+    p.add_argument("--workspace", default=r"E:\Codes2\sat-mvsf\temp", help="Output workspace directory")
     p.add_argument("--checkpoint", default="checkpoints/casred.ckpt", help="Path to model checkpoint")
-    p.add_argument("--device", default=None, help="Device spec, e.g., 'cuda:0' or 'cpu' (None = leave as-is)")
+    p.add_argument("--device", default="cpu", help="Device spec, gpu or cpu")
+    p.add_argument("--model", choices=["casred", "casred2", "casmvs"], default="casred", help="Model variant to use")
 
-    # Optional numeric hyper-parameters
     p.add_argument("--resize_scale", type=float, default=1.0, help="Output scale for depth/image (W,H)")
     p.add_argument("--sample_scale", type=float, default=1.0, help="Downsample scale for cost volume (W,H)")
     p.add_argument("--interval_scale", type=float, default=2.5, help="Depth interval scale")
     p.add_argument("--batch_size", type=int, default=1, help="Prediction batch size")
 
-    # Optional booleans via store_{true,false}
     p.add_argument("--share_cr", action="store_true", help="Whether to share the cost-volume regularization")
     p.add_argument("--adaptive_scaling", dest="adaptive_scaling", action="store_true",
                    help="Adapt input size to the network (enable)")
@@ -307,7 +268,6 @@ def main() -> None:
                    help="Disable adaptive input scaling")
     p.set_defaults(adaptive_scaling=True)
 
-    # Optional strings (lists encoded as 'a,b,c')
     p.add_argument("--ndepths", default="64,32,8", help="Number of depth hypotheses per stage, e.g., '64,32,8'")
     p.add_argument("--depth_inter_r", default="4,2,1", help="Depth interval ratios per stage, e.g., '4,2,1'")
     p.add_argument("--cr_base_chs", default="8,8,8", help="Cost-regularization base channels, e.g., '8,8,8'")
@@ -322,6 +282,7 @@ def main() -> None:
             workspace=args.workspace,
             loadckpt=args.checkpoint,
             device=args.device,
+            model=args.model,
             resize_scale=args.resize_scale,
             sample_scale=args.sample_scale,
             interval_scale=args.interval_scale,

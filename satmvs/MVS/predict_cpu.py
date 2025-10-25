@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 from satmvs.networks.casred import Infer_CascadeREDNet
 
-from satmvs.utils.utils import *               # 保留已有工具（tensor2numpy 等）
+from satmvs.utils.utils import *
 from satmvs.utils.io import save_pfm
 from satmvs.dataset.rpc_dataset import MVSDataset
 
@@ -72,28 +72,11 @@ def test(testpath, depth_range, view_num, args, logger):
                                num_workers=num_workers, drop_last=False)
 
     # build model
-    if args.model == "casmvs":
-        model = CascadeMVSNet(min_interval=depth_range[2],
-                              ndepths=[int(nd) for nd in args.ndepths.split(",") if nd],
-                              depth_interals_ratio=[float(d_i) for d_i in args.depth_inter_r.split(",") if d_i],
-                              cr_base_chs=[int(ch) for ch in args.cr_base_chs.split(",") if ch],
-                              geo_model="rpc")
-        print("===============> Model: Cascade MVS Net ===========>")
-    elif args.model == "ucs":
-        model = UCSNet(lamb=1.5,
-                       stage_configs=[int(nd) for nd in args.ndepths.split(",") if nd],
-                       base_chs=[int(ch) for ch in args.cr_base_chs.split(",") if ch],
-                       geo_model="rpc")
-        print("===============> Model: UCS-Net ===========>")
-    elif args.model == "red":
-        model = Infer_CascadeREDNet(min_interval=depth_range[2],
-                                    ndepths=[int(nd) for nd in args.ndepths.split(",") if nd],
-                                    depth_interals_ratio=[float(d_i) for d_i in args.depth_inter_r.split(",") if d_i],
-                                    cr_base_chs=[int(ch) for ch in args.cr_base_chs.split(",") if ch],
-                                    geo_model="rpc", img_channel=3)
-        logger.info("===============> Model: Cascade RED Net ===========>")
-    else:
-        raise Exception("{}? Not implemented yet!".format(args.model))
+    model = Infer_CascadeREDNet(min_interval=depth_range[2],
+                                ndepths=[int(nd) for nd in args.ndepths.split(",") if nd],
+                                depth_interals_ratio=[float(d_i) for d_i in args.depth_inter_r.split(",") if d_i],
+                                cr_base_chs=[int(ch) for ch in args.cr_base_chs.split(",") if ch])
+    logger.info("===============> Model: Cascade RED Net ===========>")
 
     # ----------------------------
     # 🔧 修改：仅在多卡 + CUDA 时使用 DataParallel

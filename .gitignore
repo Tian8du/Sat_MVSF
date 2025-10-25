@@ -3,6 +3,16 @@ satmvs/infos/
 temp/
 Generate_orders/
 
-Generate_orders/batch_orders.py
-run_sat.bat
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.build/
+build/
+dist/
+*.egg-info/
+.env
+.venv
+.pypirc
+
 
