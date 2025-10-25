@@ -2,6 +2,7 @@ satmvs/checkpoints/
 satmvs/infos/
 temp/
 Generate_orders/
+.pypirc
 
 __pycache__/
 *.pyc
@@ -13,6 +14,5 @@ dist/
 *.egg-info/
 .env
 .venv
-.pypirc
 
 

@@ -100,14 +100,14 @@ def test(testpath, depth_range, view_num, args, logger):
 
     try:
         model.load_state_dict(state_dict)
-        print("✅ Loaded model without 'module.' adjustment.")
+        print(" Loaded model without 'module.' adjustment.")
     except RuntimeError:
-        print("⚠️ Failed to load directly, trying to remove 'module.' prefix...")
+        print(" Failed to load directly, trying to remove 'module.' prefix...")
         new_state_dict = {}
         for k, v in state_dict.items():
             new_state_dict[k[7:]] = v if k.startswith('module.') else v
         model.load_state_dict(new_state_dict)
-        print("✅ Loaded model after adjusting 'module.' prefix.")
+        print(" Loaded model after adjusting 'module.' prefix.")
 
     param_cnt = sum(p.numel() for p in model.parameters())
     print(f'Number of model parameters: {param_cnt}')

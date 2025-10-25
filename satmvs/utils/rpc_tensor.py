@@ -21,12 +21,25 @@ if not hasattr(np, "float"):
     np.float = np.float64
 # =====================================================
 
+# =====================================================
+# Try GPU (CuPy); if unavailable or driver too old, fallback to NumPy
+# =====================================================
 try:
     import cupy as cp
-    _use_gpu = True
+    try:
+        # Try initializing CUDA runtime to ensure driver compatibility
+        _ = cp.zeros((1,))
+        _ = cp.cuda.runtime.getDeviceCount()
+        _use_gpu = True
+        print("✅ CuPy GPU backend enabled")
+    except Exception as e:
+        print(f"⚠️ CuPy detected but unusable ({e}); falling back to NumPy CPU mode.")
+        import numpy as cp
+        _use_gpu = False
 except ImportError:
-    import numpy as cp  # fallback to CPU mode
+    import numpy as cp
     _use_gpu = False
+    print("⚠️ CuPy not installed; using NumPy CPU mode")
 
 
 # ===================================================================
