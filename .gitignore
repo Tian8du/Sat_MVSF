@@ -3,6 +3,7 @@ satmvs/infos/
 temp/
 Generate_orders/
 .pypirc
+.txt
 
 __pycache__/
 *.pyc
@@ -14,6 +15,7 @@ dist/
 *.egg-info/
 .env
 .venv
+/E.txt
 E.txt
-
+demo.zip
 
