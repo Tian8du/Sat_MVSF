@@ -1,6 +1,6 @@
 [project]
 name = "sat-mvsf"
-version = "0.1.2"
+version = "0.1.4"
 description = "Satellite Multi-View Stereo reconstruction with CPU-blocked projection, PyTorch support, and GDAL/CuPy integration"
 readme = "README.md"
 requires-python = ">=3.9,<3.13"
@@ -10,10 +10,11 @@ authors = [{ name = "Chen Liu (Wuhan University)" }]
 keywords = ["satellite", "MVS", "3D reconstruction", "remote sensing", "PyTorch", "GDAL"]
 classifiers = [
   "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent"
 ]
 
-# ---- Core + Platform-Specific Dependencies ----
+# ---- Core dependencies (safe to install on any platform) ----
 dependencies = [
   "python-dateutil>=2.8",
   "numpy>=1.26,<2",
@@ -22,20 +23,36 @@ dependencies = [
   "matplotlib>=3.7",
   "tqdm>=4.66",
   "laspy>=2.5",
-
-  # ✅ 自动安装完整依赖（仅在 Linux）
-  "torch>=2.2,<3; platform_system == 'Linux'",
-  "torchvision>=0.17,<0.20; platform_system == 'Linux'",
-  "torchaudio>=2.2,<3; platform_system == 'Linux'",
-  "GDAL>=3.4; platform_system == 'Linux'",
-  "cupy-cuda11x>=13.0,<14.0; platform_system == 'Linux'",
 ]
 
 [project.optional-dependencies]
-# 开发环境专用
+# Deep learning stack (Linux only)
+torch = [
+  "torch>=2.2,<3; platform_system == 'Linux'",
+  "torchvision>=0.17,<0.20; platform_system == 'Linux'",
+  "torchaudio>=2.2,<3; platform_system == 'Linux'",
+]
+
+# GDAL (Linux only; will fail to build from source if system GDAL is missing)
+gdal = [
+  "gdal>=3.8,<4; platform_system == 'Linux'",
+]
+
+# CuPy (Linux with CUDA runtime)
+cupy = [
+  "cupy-cuda11x>=13.0,<14.0; platform_system == 'Linux'",
+]
+
+# Full installation (includes all heavy optional packages)
+full = [
+  "sat-mvsf[torch,gdal,cupy]"
+]
+
+# Developer tools
 dev = ["build", "twine", "wheel"]
 
 [project.scripts]
+# Command-line entry point
 satmvsf = "satmvs.satmvs_cli:main"
 
 [tool.setuptools]

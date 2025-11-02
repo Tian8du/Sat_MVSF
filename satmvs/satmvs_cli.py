@@ -248,13 +248,13 @@ def run_satmvsf(
 
 # ----------------- CLI entry -----------------
 def main() -> None:
-    p = argparse.ArgumentParser("Sat-MVSF")
+    p = argparse.ArgumentParser("Sat-MVS")
     p.add_argument("--config", default="config/config.json", help="Path to configuration file")
-    p.add_argument("--info_root", default=r"E:\Codes2\sat-mvsf\demo\orders", help="Root folder containing scene infos")
-    p.add_argument("--workspace", default=r"E:\Codes2\sat-mvsf\temp", help="Output workspace directory")
+    p.add_argument("--info_root", required=True, help="Root folder containing scene infos")
+    p.add_argument("--workspace", required=True, help="Output workspace directory")
     p.add_argument("--checkpoint", default="checkpoints/casred.ckpt", help="Path to model checkpoint")
     p.add_argument("--device", default="cpu", help="Device spec, gpu or cpu")
-    p.add_argument("--model", choices=["casred", "casred2", "casmvs"], default="casred", help="Model variant to use")
+    p.add_argument("--model", choices=["casred", "ucs", "casmvs"], default="casred", help="Model variant to use, support casred only")
 
     p.add_argument("--resize_scale", type=float, default=1.0, help="Output scale for depth/image (W,H)")
     p.add_argument("--sample_scale", type=float, default=1.0, help="Downsample scale for cost volume (W,H)")

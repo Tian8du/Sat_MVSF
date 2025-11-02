@@ -23,20 +23,20 @@ import cv2
 
 # the rpc_tensor use gpu and the rpc_core use cpu
 # Remove this comment to use gpu to speed up heightmap filtering
-from satmvs.utils.rpc_tensor import RPCModel
+# from satmvs.utils.rpc_tensor import RPCModel
 # Also, it is necessary to comment out the following sentences
-# from utils.rpc_core import RPCModelParameter
+from satmvs.utils.rpc_core import RPCModelParameter
 
 
 # project the reference point cloud into the source view, then project back
 def reproject_with_depth(depth_ref, rpc_ref, depth_src, rpc_src):
     # Remove this comment to use gpu to speed up heightmap filtering
-    rpc_model_ref = RPCModel(rpc_ref)
-    rpc_model_src = RPCModel(rpc_src)
+    # rpc_model_ref = RPCModel(rpc_ref)
+    # rpc_model_src = RPCModel(rpc_src)
     # Also, it is necessary to comment out the following sentences
     
-    # rpc_model_ref = RPCModelParameter(rpc_ref)
-    # rpc_model_src = RPCModelParameter(rpc_src)
+    rpc_model_ref = RPCModelParameter(rpc_ref)
+    rpc_model_src = RPCModelParameter(rpc_src)
     
     width, height = depth_ref.shape[1], depth_ref.shape[0]
     ## step1. project reference pixels to the source view

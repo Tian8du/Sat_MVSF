@@ -14,5 +14,6 @@ dist/
 *.egg-info/
 .env
 .venv
+E.txt
 
 

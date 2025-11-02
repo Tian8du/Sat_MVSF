@@ -33,7 +33,7 @@ import os
 import argparse
 from satmvs.utils.files import get_all_files, ensure_forward_slash, mkdir_if_not_exist
 from satmvs.pipeline.rpc_pipeline import Pipeline
-from satmvs.utils.io import read_info_from_txt, read_pair_from_txt, read_border_from_txt, read_range_from_txt
+from satmvs.utils.io import read_info_from_txt2, read_pair_from_txt, read_border_from_txt, read_range_from_txt
 from satmvs.utils.io import read_config
 from satmvs.pylog.logger import Logger
 import gc, torch
@@ -51,7 +51,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = '0'
 parser = argparse.ArgumentParser(description='Sat-MVSF')
 parser.add_argument("--config_file", default="config/config.json")
 # infomation for input data
-parser.add_argument("--info_root", default="E:\Codes2\sat-mvsf\demo\orders")
+parser.add_argument("--info_root", default=r"E:\Codes2\sat-mvsf\satmvs\infos\ZY3")
 
 # model
 parser.add_argument('--device', default="gpu", help='gpu or cpu')
@@ -72,7 +72,7 @@ parser.add_argument('--ndepths', type=str, default="64,32,8", help='ndepths')
 parser.add_argument('--depth_inter_r', type=str, default="4,2,1", help='depth_intervals_ratio')
 parser.add_argument('--cr_base_chs', type=str, default="8,8,8", help='cost regularization base channels')
 # output
-parser.add_argument("--workspace", type=str, default=r"temp_workspace_test")
+parser.add_argument("--workspace", type=str, default=r"F:\ZY3_test\workspace")
 parser.add_argument("--out_dsm_path", type=str, default=r"", help="the path of output dsm")
 
 # parse arguments and check
@@ -80,8 +80,8 @@ args = parser.parse_args()
 
 
 def sparse_pair(image_info_file, camera_info_file, pair_info_file):
-    image_paths = read_info_from_txt(image_info_file)
-    camera_paths = read_info_from_txt(camera_info_file)
+    image_paths = read_info_from_txt2(image_info_file, forward_slash=True)
+    camera_paths = read_info_from_txt2(camera_info_file, forward_slash=True)
     pair_info = read_pair_from_txt(pair_info_file)
 
     image_pairs = [[image_paths[int(img_id)] for img_id in pair_info[pair_id]] for pair_id in
